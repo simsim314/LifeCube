@@ -141,13 +141,11 @@ void LifeGrid256::Add(__m256i& b2, __m256i& b1, __m256i &b0, const __m256i& val)
 	if (IsZero(val))
 		return;
 
-	__m256i t_b0 = _mm256_xor_si256(b0, val);
 	__m256i t_b2 = _mm256_and_si256(b0, val);
-	__m256i t_b1 = _mm256_xor_si256(t_b2, b1);
-
+	
 	b2 = _mm256_or_si256(_mm256_and_si256(t_b2, b1), b2);
-	b1 = t_b1;
-	b0 = t_b0;
+	b1 = _mm256_xor_si256(t_b2, b1);
+	b0 = _mm256_xor_si256(b0, val);
 }
 
 void LifeGrid256::PrintLevel(int l)
@@ -243,8 +241,7 @@ void LifeGrid256::Iterate()
 			Add(sum2, sum1, sum0, b0);
 			Add(sum2, sum1, b1);
 
-			__m256i  total3 = _mm256_and_si256(sum1, sum0);
-			total3 = _mm256_andnot_si256(sum2, total3);
+			__m256i  total3 = _mm256_andnot_si256(sum2, _mm256_and_si256(sum1, sum0));
 
 			//Sub val from center 
 			__m256i b0_1 = _mm256_xor_si256(b0, v);
@@ -253,9 +250,7 @@ void LifeGrid256::Iterate()
 			Add(b2_U, b1_U, b0_U, b0_1);
 			Add(b2_U, b1_U, b1_1);
 
-			__m256i total3_1 = total3;
-			total3 = _mm256_and_si256(b1_U, b0_U);
-			total3 = _mm256_andnot_si256(b2_U, total3);
+			__m256i total3_1 = _mm256_andnot_si256(b2_U, _mm256_and_si256(b1_U, b0_U));
 
 			_new_data[idx] = _mm256_or_si256(total3_1, total3);
 
