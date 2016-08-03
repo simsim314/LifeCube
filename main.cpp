@@ -2,25 +2,26 @@
 #include <vector>
 #include <algorithm>
 #include <ctime>
-#include "LifeGrid256.h"
+#include "LifeGrid.h"
 #include <omp.h>
 
 using namespace std; 
-void fill_grid(LifeGrid256& grid);
-void fill_grid_gld(LifeGrid256& grid);
+void fill_grid(LifeGrid& grid);
+void fill_grid_gld(LifeGrid& grid);
+void fill_grid_gld(LifeGrid& grid);
 
 int main()
 {
 	int N = 47;
-	int iters = 17000;
-	const int num_threads = 8; 
+	int iters = 14000;
+	const int num_threads = 6; 
 
 	omp_set_num_threads(num_threads);
 
-	LifeGrid256 grid[num_threads];
+	LifeGrid grid[num_threads];
 
 	clock_t startTime = clock();
-
+	
 	#pragma omp parallel
 	{
 		int th = omp_get_thread_num();
@@ -39,13 +40,20 @@ int main()
 	double calc_time = double(clock() - startTime) / (double)CLOCKS_PER_SEC;
 	grid[0].PrintLevel(0);
 
-	//47 * 47 (grid size) * 8 (threads) * 256 (AVX) * 17,000 (iters) * 7 / 8 (min-max optimization skips 3/4 lines evry second iteration) = 67.3 billion cell evaluations
-	cout << calc_time << " seconds. ~67.3 X 10^9 Cell evaluations " << endl;
+	//47 * 47 (grid size) * 6 (threads) * 128 (SSE) * 14,000 (iters) * 7 / 8 (min-max optimization skips 3/4 lines evry second iteration) = 20.78 billion cell evaluations
+	cout << calc_time << " seconds. ~20.78 X 10^9 Cell evaluations " << endl;
 }
 
-void fill_grid_gld(LifeGrid256& grid)
+void fill_grid_gld(LifeGrid& grid)
 {
+
+#ifdef SSE
+	__m128i p1 = _mm_set_epi32(4294967295, 4294967295, 4294967295, 4294967295);
+#endif
+#ifdef AVX
 	__m256i p1 = _mm256_set_epi32(4294967295, 4294967295, 4294967295, 4294967295, 4294967295, 4294967295, 4294967295, 4294967295);
+#endif
+
 	grid.Set(0, 1, p1);
 	grid.Set(1, 1, p1);
 	grid.Set(2, 1, p1);
@@ -480,9 +488,17 @@ void fill_grid_gld(LifeGrid256& grid)
 	grid.Set(46, 45, p1);
 
 }
-void fill_grid(LifeGrid256& grid)
+
+
+void fill_grid(LifeGrid& grid)
 {
+
+#ifdef SSE
+	__m128i p1 = _mm_set_epi32(4294967295, 4294967295, 4294967295, 4294967295);
+#endif
+#ifdef AVX
 	__m256i p1 = _mm256_set_epi32(4294967295, 4294967295, 4294967295, 4294967295, 4294967295, 4294967295, 4294967295, 4294967295);
+#endif
 
 	grid.Set(36, 8, p1);
 	grid.Set(35, 9, p1);
